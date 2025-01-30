@@ -38,7 +38,7 @@ func (c *Cache) Get(key []byte) ([]byte, error) {
 	defer c.lock.RUnlock()
 
 	keyStr := string(key)
-	val, ok := c.data[string(key)]
+	val, ok := c.data[keyStr]
 	if !ok {
 		return nil, fmt.Errorf("key (%s) not found", keyStr)
 	}
