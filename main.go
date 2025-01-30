@@ -23,27 +23,42 @@ func main() {
 		IsLeader:   *leaderAddr == "",
 		LeaderAddr: *leaderAddr,
 	}
+
 	go func() {
-		time.Sleep(time.Second * 2)
-		client, err := client.New(":3000", client.Options{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = client.Set(context.Background(), []byte("foo"), []byte("bar"), 0)
-		if err != nil {
-			log.Fatal(err)
-		}
+		time.Sleep(time.Second * 5)
+		if opts.IsLeader {
 
-		value, err := client.Get(context.Background(), []byte("foo"))
-		if err != nil {
-			log.Fatal(err)
+			SendStuff()
 		}
-		fmt.Println(string(value))
-
-		client.Close()
-
 	}()
 
 	server := NewServer(opts, cache.NewCache())
 	server.Start()
+}
+
+func SendStuff() {
+	for i := 0; i < 100; i++ {
+		go func(i int) {
+			client, err := client.New(":3000", client.Options{})
+			if err != nil {
+				log.Fatal(err)
+			}
+			var (
+				key   = []byte(fmt.Sprintf("key_%d", i))
+				value = []byte(fmt.Sprintf("val_%d", i))
+			)
+			err = client.Set(context.Background(), key, value, 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fetchedValue, err := client.Get(context.Background(), key)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println(string(fetchedValue))
+
+			client.Close()
+		}(i)
+	}
 }
